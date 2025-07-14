@@ -116,7 +116,6 @@ interface GigabitEthernet0/0/1.50
 
 <br>
 
-![R1 config](https://github.com/user-attachments/assets/d9f5b4e6-2902-41f7-824a-ff458611f3a2)
 
 
 ## Conclusion
