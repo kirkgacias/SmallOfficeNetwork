@@ -23,6 +23,53 @@ The Catalyst switch’s trunk port carries all VLANs to the router, and access p
 <img width="384" height="324" alt="vlan names" src="https://github.com/user-attachments/assets/639014e0-1ccd-4f22-8109-1d807a72dabe" />
 
 
+<br>
+
+
+### DHCP POOL Configuration:
+```
+Router1(config)# ip dhcp excluded-address 192.168.10.1 192.168.10.10
+Router1(config)# ip dhcp excluded-address 192.168.20.1 192.168.20.10
+Router1(config)# ip dhcp excluded-address 192.168.30.1 192.168.30.10
+Router1(config)# ip dhcp excluded-address 192.168.40.1 192.168.40.10
+Router1(config)# ip dhcp excluded-address 192.168.50.1 192.168.50.10
+
+Router1(config)# ip dhcp pool SALES
+Router1(dhcp-config)# network 192.168.10.0 255.255.255.0
+Router1(dhcp-config)# default-router 192.168.10.1
+Router1(dhcp-config)# dns-server 8.8.8.8
+Router1(dhcp-config)# exit
+
+Router1(config)# ip dhcp pool MARKETING
+Router1(dhcp-config)# network 192.168.20.0 255.255.255.0
+Router1(dhcp-config)# default-router 192.168.20.1
+Router1(dhcp-config)# dns-server 8.8.8.8
+Router1(dhcp-config)# exit
+
+Router1(config)# ip dhcp pool HR
+Router1(dhcp-config)# network 192.168.30.0 255.255.255.0
+Router1(dhcp-config)# default-router 192.168.30.1
+Router1(dhcp-config)# dns-server 8.8.8.8
+Router1(dhcp-config)# exit
+
+Router1(config)# ip dhcp pool SERVERS
+Router1(dhcp-config)# network 192.168.40.0 255.255.255.0
+Router1(dhcp-config)# default-router 192.168.40.1
+Router1(dhcp-config)# dns-server 8.8.8.8
+Router1(dhcp-config)# exit
+
+Router1(config)# ip dhcp pool GUEST
+Router1(dhcp-config)# network 192.168.50.0 255.255.255.0
+Router1(dhcp-config)# default-router 192.168.50.1
+Router1(dhcp-config)# dns-server 8.8.4.4
+Router1(dhcp-config)# exit
+```
+<br>
+
+### Routing & Internet Access:
+
+Inter-VLAN forwarding is enabled by router-on-a-stick subinterfaces on Router1, and a default static route sends all non-internal traffic to the simulated ISP (Cloud-PT). Devices in each VLAN can reach the internet while still communicating across VLAN boundaries. 
+
 ### ROAS Configuration:
 ```
 Router1(config)# interface GigabitEthernet0/0/1.10
@@ -50,116 +97,27 @@ Router1(config-subif)# encapsulation dot1Q 50
 Router1(config-subif)# ip address 192.168.50.1 255.255.255.0
 Router1(config-subif)# exit
 ```
-<br>
 
-![PC1](https://github.com/user-attachments/assets/a6ecaf45-1893-492a-8258-c41d07656b75)
+<img width="596" height="105" alt="default route in router" src="https://github.com/user-attachments/assets/046b5d8b-84a8-4f92-8cb9-11bf80671872" />
 
-### PC2 Configuration:
+## Basic Access Control with ACLs
+A simple ACL on the Guest VLAN subinterface prevents guest hosts from accessing internal departmental networks while permitting all other traffic:
+
 ```
-Default Gateway: 192.168.3.254 (R3)
-IP Address: 192.168.3.1
-Subnet Mask: 255.255.255.0
+ip access-list extended GUEST_RESTRICT
+  deny ip 192.168.50.0 0.0.0.255 192.168.10.0 0.0.0.255
+  deny ip 192.168.50.0 0.0.0.255 192.168.20.0 0.0.0.255
+  deny ip 192.168.50.0 0.0.0.255 192.168.30.0 0.0.0.255
+  permit ip any any
+interface GigabitEthernet0/0/1.50
+  ip access-group GUEST_RESTRICT in
 ```
-<br>
 
-![FIX](https://github.com/user-attachments/assets/cdd53c81-3dc0-4ac8-b1c2-041be3b8c7d6)
-
-
-
-## Router Configurations
-To configure the routers, I will first enter privileged EXEC mode using the `enable` command and then switch to global configuration mode. Next, we will set a hostname for each router and proceed to configure their interfaces. Each interface will be assigned its respective IP address, along with a description indicating its connection. Finally, we will activate the interfaces using the `no shutdown` command and repeat these steps for all interfaces.
 
 <br>
 
 ![R1 config](https://github.com/user-attachments/assets/d9f5b4e6-2902-41f7-824a-ff458611f3a2)
 
-### R1:
-```
-ENABLE
-CONFIGURE TERMINAL
-HOSTNAME R1
-INTERFACE G0/1
-IP ADDRESS 192.168.1.254 255.255.255.0
-DESCRIPTION ## to SW1 ##
-NO SHUTDOWN
-INTERFACE G0/0
-IP ADDRESS 192.168.12.1 255.255.255.0
-DESCRIPTION ## to R2 ##
-NO SHUTDOWN
-```
-
-
-### R2:
-```
-ENABLE
-CONFIGURE TERMINAL
-HOSTNAME R2
-INTERFACE G0/0
-IP ADDRESS 192.168.12.2 255.255.255.0
-DESCRIPTION ## to R1 ##
-NO SHUTDOWN
-INTERFACE G0/1
-IP ADDRESS 192.168.13.2 255.255.255.0
-DESCRIPTION ## to R3 ##
-NO SHUTDOWN
-```
-
-### R3:
-```
-ENABLE
-CONFIGURE TERMINAL
-HOSTNAME R3
-INTERFACE G0/0
-IP ADDRESS 192.168.13.3 255.255.255.0
-DESCRIPTION ## to R2 ##
-NO SHUTDOWN
-INTERFACE G0/1
-IP ADDRESS 192.168.3.254 255.255.255.0
-DESCRIPTION ## to SW2 ##
-NO SHUTDOWN
-```
-
-## Static Route Configuration
-Since R1 and R3 are not directly connected, I must configure static routes for proper communication. R2, being an intermediate router, requires routes to both networks.
-### R1 Configuration:
-```
-IP ROUTE 192.168.3.0 255.255.255.0 192.168.12.2
-```
-![Static Route 1](https://github.com/user-attachments/assets/03274f00-1a2c-4cd3-8cd0-f7e37e894f82)
-
-<br>
-
-### R2 Configuration:
-```
-IP ROUTE 192.168.1.0 255.255.255.0 G0/0
-IP ROUTE 192.168.3.0 255.255.255.0 192.168.13.3
-```
-
-![image](https://github.com/user-attachments/assets/b228c1e4-4d42-4c94-ab94-73f2187d8715)
-
-
-### R3 Configuration:
-```
-IP ROUTE 192.168.1.0 255.255.255.0 192.168.13.2
-```
-
-![STATIC 3](https://github.com/user-attachments/assets/f6078a9a-7b74-4dc7-b45d-94d0bed663a6)
-
-## Verification and Testing
-### Check Routing Tables:
-```
-DO SHOW IP ROUTE
-```
-Each router should display the configured static routes along with directly connected routes.
-
-### Ping Test from PC1 to PC2:
-```
-PING 192.168.3.1
-```
-The first ping may fail due to ARP resolution, but subsequent pings should succeed if configured correctly.
-
-![ping](https://github.com/user-attachments/assets/74bb387e-ac7f-4f2d-91ec-31c750c5b0b0)
-
 
 ## Conclusion
-By configuring static routes, I successfully enabled communication between PC1 and PC2 across multiple routers. This lab demonstrated fundamental routing principles essential for network engineering and CCNA certification.
+This lab covers VLAN segmentation, DHCP, inter-VLAN routing, internet gateway setup and ACL security in a small office topology. 
