@@ -23,11 +23,32 @@ The Catalyst switch’s trunk port carries all VLANs to the router, and access p
 <img width="384" height="324" alt="vlan names" src="https://github.com/user-attachments/assets/639014e0-1ccd-4f22-8109-1d807a72dabe" />
 
 
-### PC1 Configuration:
+### ROAS Configuration:
 ```
-Default Gateway: 192.168.1.254 (R1)
-IP Address: 192.168.1.1
-Subnet Mask: 255.255.255.0
+Router1(config)# interface GigabitEthernet0/0/1.10
+Router1(config-subif)# encapsulation dot1Q 10
+Router1(config-subif)# ip address 192.168.10.1 255.255.255.0
+Router1(config-subif)# exit
+
+Router1(config)# interface GigabitEthernet0/0/1.20
+Router1(config-subif)# encapsulation dot1Q 20
+Router1(config-subif)# ip address 192.168.20.1 255.255.255.0
+Router1(config-subif)# exit
+
+Router1(config)# interface GigabitEthernet0/0/1.30
+Router1(config-subif)# encapsulation dot1Q 30
+Router1(config-subif)# ip address 192.168.30.1 255.255.255.0
+Router1(config-subif)# exit
+
+Router1(config)# interface GigabitEthernet0/0/1.40
+Router1(config-subif)# encapsulation dot1Q 40
+Router1(config-subif)# ip address 192.168.40.1 255.255.255.0
+Router1(config-subif)# exit
+
+Router1(config)# interface GigabitEthernet0/0/1.50
+Router1(config-subif)# encapsulation dot1Q 50
+Router1(config-subif)# ip address 192.168.50.1 255.255.255.0
+Router1(config-subif)# exit
 ```
 <br>
 
